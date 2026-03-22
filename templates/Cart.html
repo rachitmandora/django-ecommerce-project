@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cart</title>
+
+    <style>
+        body{
+            font-family: Arial;
+            margin:0;
+            background:#f5f5f5;
+        }
+
+        .header{
+            background:#222;
+            color:white;
+            padding:20px;
+            text-align:center;
+        }
+
+        .header a{
+            color:#00bcd4;
+            text-decoration:none;
+        }
+
+        .container{
+            padding:20px;
+        }
+
+        .cart-item{
+            background:white;
+            margin-bottom:15px;
+            padding:15px;
+            border-radius:10px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .details{
+            width:60%;
+        }
+
+        .actions{
+            text-align:center;
+        }
+
+        .actions a{
+            text-decoration:none;
+            padding:8px 12px;
+            background:#ddd;
+            margin:5px;
+            border-radius:5px;
+            font-weight:bold;
+        }
+
+        .actions a:hover{
+            background:#bbb;
+        }
+
+        .total-box{
+            background:white;
+            padding:20px;
+            border-radius:10px;
+            text-align:center;
+            margin-top:20px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .checkout-btn{
+            background:green;
+            color:white;
+            padding:12px 25px;
+            border:none;
+            cursor:pointer;
+            margin-top:10px;
+            font-size:16px;
+            border-radius:5px;
+        }
+
+        .checkout-btn:hover{
+            background:darkgreen;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>Your Cart</h1>
+    <a href="/">← Continue Shopping</a>
+</div>
+
+<div class="container">
+
+{% if cart_items %}
+
+    {% for item in cart_items %}
+
+    <div class="cart-item">
+
+        <div class="details">
+            <h3>{{ item.product.name }}</h3>
+            <p>Price: ₹{{ item.product.price }}</p>
+
+            <!-- ✅ CORRECT TOTAL -->
+            <p><strong>Total: ₹{{ item.product.price|floatformat:2|add:item.quantity }}</strong></p>
+        </div>
+
+        <div class="actions">
+
+            <a href="/decrease/{{ item.id }}/">-</a>
+
+            <span>{{ item.quantity }}</span>
+
+            <a href="/increase/{{ item.id }}/">+</a>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+    <div class="total-box">
+        <h2>Total Amount: ₹{{ total }}</h2>
+
+        <a href="/checkout/">
+            <button class="checkout-btn">Proceed to Checkout</button>
+        </a>
+    </div>
+
+{% else %}
+
+    <h2>Your cart is empty 😢</h2>
+
+{% endif %}
+
+</div>
+
+</body>
+</html>
