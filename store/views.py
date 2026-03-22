@@ -2,27 +2,47 @@ from django.shortcuts import render, get_object_or_404
 from .models import Product
 from django.contrib.auth.decorators import login_required
 
+from django.shortcuts import render
+from .models import Product, Category, Cart
+
 def home(request):
     products = Product.objects.all()
     categories = Category.objects.all()
 
     recommended_products = []
+    cart_count = 0
 
     if request.user.is_authenticated:
-        user_orders = Order.objects.filter(user=request.user)
+        cart_items = Cart.objects.filter(user=request.user)
 
-        # Get categories user bought
-        category_ids = []
-        for order in user_orders:
-            category_ids.append(order.product.category.id)
+        # ✅ Cart count
+        cart_count = sum(item.quantity for item in cart_items)
 
-        # Get similar products
-        recommended_products = Product.objects.filter(category__id__in=category_ids).exclude(id__in=[o.product.id for o in user_orders]).distinct()
+        # ✅ Get category ids from cart
+        category_ids = list(set(
+            item.product.category.id for item in cart_items
+        ))
+
+        if category_ids:
+            # ✅ Recommend similar category products
+            recommended_products = Product.objects.filter(
+                category__id__in=category_ids
+            ).exclude(
+                id__in=[item.product.id for item in cart_items]
+            )[:4]
+        else:
+            # ✅ If cart empty → show random products
+            recommended_products = Product.objects.order_by('?')[:4]
+
+    else:
+        # ✅ If user not logged in → show random products
+        recommended_products = Product.objects.order_by('?')[:4]
 
     return render(request, 'index.html', {
         'products': products,
         'categories': categories,
-        'recommended_products': recommended_products
+        'recommended_products': recommended_products,
+        'cart_count': cart_count
     })
 
 def product_detail(request, id):
@@ -131,3 +151,16 @@ def decrease_quantity(request, id):
 
 def success(request):
     return render(request, 'success.html')
+
+from django.contrib import messages
+from django.shortcuts import redirect
+from .models import Cart
+
+def fake_payment(request):
+    if request.user.is_authenticated:
+        # clear cart after payment
+        Cart.objects.filter(user=request.user).delete()
+
+        messages.success(request, "✅ Payment Successful!")
+
+    return redirect('home')

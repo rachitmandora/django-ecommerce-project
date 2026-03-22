@@ -95,6 +95,13 @@
             <a href="/accounts/login/">Login</a>
         {% endif %}
     </div>
+    {% if messages %}
+    {% for message in messages %}
+        <div style="background:#d4edda; color:#155724; padding:10px; margin:10px;">
+            {{ message }}
+        </div>
+    {% endfor %}
+    {% endif %}
 
     <div class="search-box">
         <form method="GET">

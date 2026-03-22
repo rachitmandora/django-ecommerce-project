@@ -12,4 +12,5 @@ urlpatterns = [
     path('increase/<int:id>/', views.increase_quantity, name='increase'),
     path('decrease/<int:id>/', views.decrease_quantity, name='decrease'),
     path('success/', views.success, name='success'),
+    path('fake-payment/', views.fake_payment, name='fake_payment'),
 ]
