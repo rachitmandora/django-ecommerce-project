@@ -124,12 +124,10 @@
     <div class="total-box">
     <h2>Total Amount: ₹{{ total }}</h2>
 
-    <a href="{% url 'fake_payment' %}">
-        <button style="background:orange; padding:10px; border:none; color:white;">
-            💳 Pay Now
-        </button>
-    </a>
-</div>
+   <a href="{% url 'checkout' %}" class="checkout-btn">
+    🛒 Proceed to Checkout
+   </a>
+   </div>
 
 {% else %}
 

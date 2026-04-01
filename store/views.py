@@ -1,9 +1,27 @@
 from django.shortcuts import render, get_object_or_404
-from .models import Product
 from django.contrib.auth.decorators import login_required
-
 from django.shortcuts import render
 from .models import Product, Category, Cart
+from .models import Product,Cart,Order,Category
+from django.shortcuts import redirect
+from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+from django.http import JsonResponse
+import json
+from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from .models import Cart
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Product
+from django.views.decorators.csrf import csrf_exempt
+from .models import Order
+from .models import Order, Product, Cart
+from rest_framework.permissions import AllowAny
+
 
 def home(request):
     products = Product.objects.all()
@@ -49,16 +67,18 @@ def product_detail(request, id):
     product = get_object_or_404(Product, id=id)
     return render(request,'product_detail.html',{'product':product})
 
-from .models import Product,Cart,Order,Category
-from django.shortcuts import redirect
-
-
-@login_required
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def add_to_cart(request, id):
-    product = Product.objects.get(id=id)
+    user = request.user   # ✅ IMPORTANT
+
+    try:
+        product = Product.objects.get(id=id)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=404)
 
     cart_item, created = Cart.objects.get_or_create(
-        user=request.user,
+        user=user,
         product=product
     )
 
@@ -66,7 +86,7 @@ def add_to_cart(request, id):
         cart_item.quantity += 1
         cart_item.save()
 
-    return redirect('home')
+    return Response({"message": "Added to cart"})
 
 @login_required
 def cart_page(request):
@@ -85,8 +105,6 @@ def remove_item(request,id):
     item = Cart.objects.get(id=id)
     item.delete()
     return redirect('cart')
-
-from django.contrib.auth.decorators import login_required
 
 @login_required
 def checkout(request):
@@ -108,26 +126,29 @@ def checkout(request):
 
     return render(request, 'checkout.html')
 
-from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import render, redirect
 
 def signup(request):
-    form = UserCreationForm()
+    if request.method == "POST":
+        data = json.loads(request.body)
 
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('login')
+        username = data.get("username")
+        password = data.get("password")
 
-    return render(request, 'signup.html', {'form': form})
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({"error": "User already exists"})
 
+        User.objects.create_user(
+            username=username,
+            password=password
+        )
+
+        return JsonResponse({"message": "Signup successful"})
+    
 @login_required
 def my_orders(request):
     orders = Order.objects.filter(user=request.user)
     return render(request, 'orders.html', {'orders': orders})
 
-from django.shortcuts import get_object_or_404
 
 @login_required
 def increase_quantity(request, id):
@@ -152,9 +173,6 @@ def decrease_quantity(request, id):
 def success(request):
     return render(request, 'success.html')
 
-from django.contrib import messages
-from django.shortcuts import redirect
-from .models import Cart
 
 def fake_payment(request):
     if request.user.is_authenticated:
@@ -164,3 +182,115 @@ def fake_payment(request):
         messages.success(request, "✅ Payment Successful!")
 
     return redirect('home')
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def product_list(request):
+    products = Product.objects.all()
+
+    data = []
+    for product in products:
+        image_url = None
+        if product.image:
+            image_url = request.build_absolute_uri(product.image.url)
+
+        data.append({
+            "id": product.id,
+            "name": product.name,
+            "price": product.price,
+            "category": product.category.name,
+            "image": image_url   # ✅ ADDED
+        })
+
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_cart(request):
+    user = request.user
+    cart_items = Cart.objects.filter(user=user)
+
+    data = []
+    for item in cart_items:
+        data.append({
+            "id": item.product.id,
+            "name": item.product.name,
+            "price": item.product.price,
+            "quantity": item.quantity
+        })
+
+    return JsonResponse(data, safe=False)  
+
+
+@csrf_exempt
+def save_order(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        cart = data.get("cart")
+
+        user = User.objects.first()
+
+        for item in cart:
+            product = Product.objects.get(id=item["id"])
+
+            Order.objects.create(
+                user=user,
+                product=product,
+                quantity=item["quantity"],
+                price=item["price"]
+            )
+
+        # ✅ Clear cart after order
+        Cart.objects.filter(user=user).delete()
+
+        return JsonResponse({"message": "Order saved"})
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def increase_quantity(request, id):
+    user = request.user
+    cart_item = Cart.objects.get(user=user, product__id=id)
+    cart_item.quantity += 1
+    cart_item.save()
+    return Response({"message": "Quantity increased"})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def decrease_quantity(request, id):
+    user = request.user
+    cart_item = Cart.objects.get(user=user, product__id=id)
+
+    if cart_item.quantity > 1:
+        cart_item.quantity -= 1
+        cart_item.save()
+    else:
+        cart_item.delete()
+
+    return Response({"message": "Quantity decreased"})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def remove_from_cart(request, id):
+    user = request.user
+    Cart.objects.filter(user=user, product__id=id).delete()
+    return Response({"message": "Item removed"})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_orders(request):
+    user = request.user
+    orders = Order.objects.filter(user=user)
+
+    data = []
+    for order in orders:
+        data.append({
+            "id": order.id,
+            "product": order.product.name,
+            "price": order.price,
+            "quantity": order.quantity,
+        })
+
+    return Response(data)
