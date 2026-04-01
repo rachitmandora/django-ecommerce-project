@@ -1,31 +1,43 @@
 # 🛒 Django E-Commerce Project
 
+A full-stack e-commerce web application built using **Django (Backend)** and **React (Frontend)**.  
+This project includes authentication, cart system, order management, and a modern UI.
+
+---
+
 ## 🚀 Features
-- User Authentication (Login/Register)
-- Product Listing with Categories
-- Add to Cart System
-- Quantity Management (+ / -)
-- AI-based Product Recommendation 🤖
-- Fake Payment Integration 💳
-- Order Management System 📦
+
+- 🔐 User Authentication (JWT Login/Register)
+- 🛍 Product Listing with Categories & Images
+- 🔍 Search Functionality
+- 🛒 Add to Cart System
+- ➕ Quantity Management (+ / -)
+- 📦 Order Management System
+- 💳 Checkout with Fake Payment Integration
+- 📊 Cart Total Calculation
+- 🎨 Modern UI (React)
 
 ---
 
 ## 🛠 Tech Stack
-- Backend: Django (Python)
-- Frontend: HTML, CSS
-- Database: SQLite
-- Version Control: Git & GitHub
+
+### 🔹 Backend
+- Django
+- Django REST Framework (DRF)
+
+### 🔹 Frontend
+- React.js
+- HTML, CSS, JavaScript
+
+### 🔹 Authentication
+- JWT (JSON Web Tokens)
+
+### 🔹 Database
+- SQLite
+
+### 🔹 Version Control
+- Git & GitHub
 
 ---
 
-## 📸 Screenshots
-(Add your project screenshots here)
-
----
-
-## ⚙️ How to Run
-
-1. Clone the repository
-```bash
-git clone https://github.com/rachitmandora/django-ecommerce-project.git
+## 📁 Project Structure
